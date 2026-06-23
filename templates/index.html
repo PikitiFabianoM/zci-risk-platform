@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZCI Enterprise Risk Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen font-sans">
+
+    <header class="border-b border-slate-800 bg-slate-950 p-4 shadow-md">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-bold tracking-wider text-emerald-400">ZCI ENTERPRISE RISK PLATFORM</h1>
+            <span class="text-xs bg-slate-800 px-3 py-1 rounded text-slate-400 border border-slate-700">Officer Terminal v1.0</span>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
+        
+        <section class="bg-slate-950 p-6 rounded-lg border border-slate-800 shadow-xl">
+            <h2 class="text-lg font-semibold mb-4 text-slate-300 border-b border-slate-800 pb-2">New Risk Assessment</h2>
+            <form id="riskForm" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Borrower Full Name</label>
+                    <input type="text" id="borrower_name" required class="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-slate-200 focus:outline-none focus:border-emerald-500">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Loan Principal (ZMW)</label>
+                        <input type="number" id="loan_amount" required class="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-slate-200 focus:outline-none focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Monthly Net Income (ZMW)</label>
+                        <input type="number" id="monthly_income" required class="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-slate-200 focus:outline-none focus:border-emerald-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Proposed Monthly Installment (ZMW)</label>
+                    <input type="number" id="monthly_installment" required class="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-slate-200 focus:outline-none focus:border-emerald-500">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Employment Type</label>
+                        <select id="employment" class="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-slate-200 focus:outline-none focus:border-emerald-500">
+                            <option value="formal_employed">Formal Employment</option>
+                            <option value="self_employed">Self Employed / Trader</option>
+                            <option value="unemployed">Unemployed</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Trade Sector</label>
+                        <select id="sector" class="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-slate-200 focus:outline-none focus:border-emerald-500">
+                            <option value="trade">Retail & Trade</option>
+                            <option value="services">Services / Agri</option>
+                            <option value="other">Other Sectors</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Collateral Secured?</label>
+                        <select id="has_collateral" class="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-slate-200 focus:outline-none focus:border-emerald-500">
+                            <option value="no">No Collateral</option>
+                            <option value="yes">Yes, Verified Asset</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">High MoMo Velocity?</label>
+                        <select id="momo_proxy" class="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-slate-200 focus:outline-none focus:border-emerald-500">
+                            <option value="no">Standard Volume</option>
+                            <option value="yes">Yes, Strong History</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Credit History (Bureau)</label>
+                    <select id="credit_history" class="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-slate-200 focus:outline-none focus:border-emerald-500">
+                        <option value="none">No Prior Records</option>
+                        <option value="3_paid">3+ Facilities Settled</option>
+                        <option value="1-2_paid">1-2 Facilities Settled</option>
+                        <option value="defaulted">Historical Default</option>
+                    </select>
+                </div>
+
+                <button type="button" onclick="submitAssessment()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold py-3 px-4 rounded tracking-wide transition shadow-lg">
+                    EXECUTE RISK EVALUATION
+                </button>
+            </form>
+        </section>
+
+        <section class="space-y-6">
+            <div id="resultCard" class="hidden bg-slate-950 p-6 rounded-lg border border-emerald-800 shadow-xl transition-all">
+                <h2 class="text-lg font-semibold mb-2 text-slate-300 border-b border-slate-800 pb-2">Evaluation Metrics</h2>
+                
+                <div class="flex items-baseline justify-between mt-4">
+                    <span class="text-sm text-slate-400">Calculated Score Index</span>
+                    <span id="resScore" class="text-5xl font-black text-emerald-400">0</span>
+                </div>
+                
+                <div class="mt-4 p-4 rounded bg-slate-900 border border-slate-800">
+                    <div class="text-xs font-bold uppercase text-slate-400 tracking-wider">System Decision</div>
+                    <div id="resDecision" class="text-xl font-extrabold mt-1">---</div>
+                    <p id="resRec" class="text-sm text-slate-300 mt-2 italic"></p>
+                </div>
+
+                <div class="mt-4 text-sm text-slate-400 flex justify-between">
+                    <span>Debt-to-Income (DTI):</span>
+                    <span id="resDTI" class="font-bold text-slate-200">0%</span>
+                </div>
+
+                <a id="downloadBtn" href="#" class="block mt-6 text-center bg-slate-800 border border-slate-700 hover:border-slate-600 text-slate-200 font-semibold py-2 px-4 rounded transition">
+                    Download Official Memorandum (.PDF)
+                </a>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        async function submitAssessment() {
+            const payload = {
+                borrower_name: document.getElementById('borrower_name').value,
+                loan_amount: document.getElementById('loan_amount').value,
+                monthly_income: document.getElementById('monthly_income').value,
+                monthly_installment: document.getElementById('monthly_installment').value,
+                employment: document.getElementById('employment').value,
+                sector: document.getElementById('sector').value,
+                has_collateral: document.getElementById('has_collateral').value,
+                momo_proxy: document.getElementById('momo_proxy').value,
+                credit_history: document.getElementById('credit_history').value,
+                officer: "officer_alpha"
+            };
+
+            try {
+                const response = await fetch('/api/assessments', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) throw new Error("Evaluation Engine Error");
+                const data = await response.json();
+
+                // Unhide the result component and populate dynamic text elements
+                document.getElementById('resultCard').classList.remove('hidden');
+                document.getElementById('resScore').innerText = data.score + " / 100";
+                document.getElementById('resDecision').innerText = data.decision;
+                document.getElementById('resRec').innerText = data.rec;
+                document.getElementById('resDTI').innerText = data.dti + "%";
+                
+                // Dynamically route the built-in PDF download mechanism
+                const downloadBtn = document.getElementById('downloadBtn');
+                downloadBtn.href = `/api/download_report/${data.id}`;
+                
+                // Add color variance based on automated system outcome
+                const decEl = document.getElementById('resDecision');
+                if (data.decision === 'APPROVE') decEl.className = "text-xl font-extrabold mt-1 text-emerald-400";
+                else if (data.decision === 'CONDITIONAL') decEl.className = "text-xl font-extrabold mt-1 text-amber-500";
+                else decEl.className = "text-xl font-extrabold mt-1 text-rose-500";
+
+            } catch (err) {
+                alert("Failed to execute application calculation hook: " + err.message);
+            }
+        }
+    </script>
+</body>
+</html>
