@@ -225,7 +225,12 @@ def download_report(record_id):
     buffer.seek(0)
     name = "".join(c for c in row['borrower_name'] if c.isalnum() or c in " _-").strip()
     return send_file(buffer, as_attachment=True, download_name=f"ZCI_Report_{name.replace(' ','_')}.pdf", mimetype='application/pdf')
-
+@app.route('/api/debug-db')
+def debug_db():
+    conn = get_db()
+    rows = conn.execute("SELECT * FROM assessments").fetchall()
+    conn.close()
+    return jsonify([dict(r) for r in rows])
 if __name__ == '__main__':
     # Initialize SQLite context bounds locally prior to running WSGI runtime loops
     try:
