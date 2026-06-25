@@ -18,8 +18,9 @@ def get_db():
 
 def init_db():
     conn = get_db()
+    # FIX: Corrected syntax typo from AUTORED_INCREMENT to AUTOINCREMENT
     conn.execute('''CREATE TABLE IF NOT EXISTS assessments (
-        id INTEGER PRIMARY KEY AUTORED_INCREMENT,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         borrower_name TEXT,
         loan_amount REAL,
         monthly_income REAL,
@@ -42,6 +43,18 @@ def init_db():
 @app.route('/')
 def index():
     return render_template('index.html')
+
+# FIX: Secured the debug endpoint with basic query parameter authentication
+@app.route('/api/debug-db')
+def debug_db():
+    token = request.args.get('token')
+    if token != VALID_OFFICER_TOKEN:
+        return jsonify({"error": "Unauthorized access restriction active"}), 401
+        
+    conn = get_db()
+    rows = conn.execute("SELECT * FROM assessments").fetchall()
+    conn.close()
+    return jsonify([dict(r) for r in rows])
 
 @app.route('/api/assessments', methods=['POST', 'OPTIONS', 'GET'])
 def api_assessments():
@@ -73,7 +86,6 @@ def api_assessments():
         credit_history = data.get('credit_history', 'none')
         officer = data.get('officer', VALID_OFFICER_TOKEN)
 
-        # 1. Calculate Debt-To-Income (DTI)
         dti = round((monthly_installment / monthly_income) * 100, 1)
 
         pts = 0
@@ -82,21 +94,19 @@ def api_assessments():
         elif dti <= 45: pts += 10
         elif dti <= 60: pts += 5
 
-        # 2. Add Loan-to-Annual-Income Risk Factor (Fixes Issue #2)
         annual_income = monthly_income * 12
         loan_to_income_ratio = (loan_amount / annual_income) if annual_income > 0 else 0
         if loan_to_income_ratio <= 0.5: pts += 15
         elif loan_to_income_ratio <= 1.0: pts += 10
         elif loan_to_income_ratio <= 2.0: pts += 5
-        else: pts -= 15  # Penalty for oversized risk exposure relative to income baselines
+        else: pts -= 15
 
         if employment == 'formal_employed': pts += 25
         elif employment == 'self_employed': pts += 18
         else: pts += 8
 
-        # 3. Dedicated Agriculture Sector Scoring Weight (Fixes Issue #3)
         if sector == 'trade': pts += 25
-        elif sector == 'agriculture': pts += 22  # Specialized agricultural credit baseline adjustment
+        elif sector == 'agriculture': pts += 22  
         elif sector == 'services': pts += 15
         else: pts += 10
 
@@ -108,14 +118,11 @@ def api_assessments():
         elif credit_history == 'none': pts += 5
         elif credit_history == 'defaulted': pts -= 10
 
-        # Calculate base score scaled over a total possible maximum of 140 operational points
         score = max(0, min(100, round((pts / 140) * 100)))
 
-        # 4. Global Hard Override Policy Rule for Historical Defaults (Fixes Issue #1)
         if credit_history == 'defaulted' and score > 35:
             score = 35
 
-        # Determine structural rating category bounds based on adjusted target intervals
         if score >= 70:
             decision = "APPROVE"
             rec = "Proceed with standard facility parameters. Recommended rate: 18-22% p.a."
@@ -196,7 +203,6 @@ def download_report(record_id):
         HRFlowable(width="100%", thickness=0.5, color=colors.HexColor('#E2E8F0'), spaceAfter=10),
     ]
 
-    # Added Mobile Money Proxy and Bureau Credit History details to table metadata array (Fixes Issue #4)
     details = [
         ["BORROWER ENTITY", str(row['borrower_name'])],
         ["PRINCIPAL ADVANCE", f"ZMW {row['loan_amount']:,.2f}"],
@@ -225,16 +231,8 @@ def download_report(record_id):
     buffer.seek(0)
     name = "".join(c for c in row['borrower_name'] if c.isalnum() or c in " _-").strip()
     return send_file(buffer, as_attachment=True, download_name=f"ZCI_Report_{name.replace(' ','_')}.pdf", mimetype='application/pdf')
-@app.route('/api/debug-db')
-def debug_db():
-    conn = get_db()
-    rows = conn.execute("SELECT * FROM assessments").fetchall()
-    conn.close()
-    return jsonify([dict(r) for r in rows])
+
 if __name__ == '__main__':
-    # Initialize SQLite context bounds locally prior to running WSGI runtime loops
-    try:
-        init_db()
-    except Exception:
-        pass
+    # REMOVED silent try/except block to allow clean database validation
+    init_db()
     app.run(debug=True)
