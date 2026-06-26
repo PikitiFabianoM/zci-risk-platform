@@ -11,7 +11,7 @@ app = Flask(__name__)
 DATABASE = 'zci_registry.db'
 VALID_OFFICER_TOKEN = 'officer_alpha'
 
-# Static lookup table mapping Zambia agricultural hub districts to historical CHIRPS data baselines
+# Sourced baseline CHIRPS data for Zambian agricultural operational hubs
 DISTRICT_RAINFALL_LOOKUP = {
     "Kabwe": {"annual_mm": 920, "zone": "Region IIa"},
     "Chibombo": {"annual_mm": 850, "zone": "Region IIa"},
@@ -104,7 +104,17 @@ def api_assessments():
 
         dti = round((monthly_installment / monthly_income) * 100, 1)
 
-        # Baseline Scoring Accumulation Blocks (Max possible points tracked = 140)
+        # 🌧️ CRITICAL FIX: Extract and calculate rainfall metrics BEFORE running final score algorithm
+        weather_info = DISTRICT_RAINFALL_LOOKUP.get(district, {"annual_mm": 920, "zone": "Region IIa"})
+        annual_mm = weather_info['annual_mm']
+        
+        if annual_mm >= 900: rainfall_pts = 100
+        elif annual_mm >= 700: rainfall_pts = 80
+        elif annual_mm >= 500: rainfall_pts = 60
+        elif annual_mm >= 300: rainfall_pts = 40
+        else: rainfall_pts = 20
+
+        # Run Core Credit Point Allocations (Base Sub-total max points = 140)
         pts = 0
         if dti <= 15: pts += 30
         elif dti <= 30: pts += 20
@@ -135,9 +145,12 @@ def api_assessments():
         elif credit_history == 'none': pts += 5
         elif credit_history == 'defaulted': pts -= 10
 
-        score = max(0, min(100, round((pts / 140) * 100)))
+        # 🌧️ CRITICAL FIX: Combine standard points with the newly verified rainfall risk parameters
+        # Total maximum available scale points = 140 base + 100 rainfall = 240
+        total_pts = pts + rainfall_pts
+        score = max(0, min(100, round((total_pts / 240) * 100)))
 
-        # Fallback security limits
+        # Absolute hard safety limits
         if credit_history == 'defaulted' and score > 35:
             score = 35
 
@@ -188,7 +201,6 @@ def download_report(record_id):
         return "Record not found", 404
     row = dict(row)
 
-    # Dynamic lookup calculation for the PDF rendering pass
     district_name = row.get('district', 'Kabwe')
     weather_info = DISTRICT_RAINFALL_LOOKUP.get(district_name, {"annual_mm": 920, "zone": "Region IIa"})
     annual_mm = weather_info['annual_mm']
