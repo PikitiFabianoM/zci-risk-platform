@@ -104,17 +104,22 @@ def api_assessments():
 
         dti = round((monthly_installment / monthly_income) * 100, 1)
 
-        # 🌧️ CRITICAL FIX: Extract and calculate rainfall metrics BEFORE running final score algorithm
+        # 🌧️ RECALIBRATED CLIMATE RISK MATRIX (Contributes ~10% of the maximum 155 total scale points)
         weather_info = DISTRICT_RAINFALL_LOOKUP.get(district, {"annual_mm": 920, "zone": "Region IIa"})
         annual_mm = weather_info['annual_mm']
         
-        if annual_mm >= 900: rainfall_pts = 100
-        elif annual_mm >= 700: rainfall_pts = 80
-        elif annual_mm >= 500: rainfall_pts = 60
-        elif annual_mm >= 300: rainfall_pts = 40
-        else: rainfall_pts = 20
+        if annual_mm >= 1100:
+            rainfall_pts = 15      # High/Stable Rainfall (Region III)
+        elif annual_mm >= 800:
+            rainfall_pts = 10      # Favorable/Standard Rainfall (Region IIa)
+        elif annual_mm >= 700:
+            rainfall_pts = 0       # Moderate Risk Baseline (Region IIb)
+        elif annual_mm >= 600:
+            rainfall_pts = -10     # Critical Drought/Arid Stress (Region I)
+        else:
+            rainfall_pts = -15     # Extreme Climate Stress (Region I)
 
-        # Run Core Credit Point Allocations (Base Sub-total max points = 140)
+        # Core Credit Point Allocations (Base Sub-total max points = 140)
         pts = 0
         if dti <= 15: pts += 30
         elif dti <= 30: pts += 20
@@ -145,10 +150,10 @@ def api_assessments():
         elif credit_history == 'none': pts += 5
         elif credit_history == 'defaulted': pts -= 10
 
-        # 🌧️ CRITICAL FIX: Combine standard points with the newly verified rainfall risk parameters
-        # Total maximum available scale points = 140 base + 100 rainfall = 240
-        total_pts = pts + rainfall_pts
-        score = max(0, min(100, round((total_pts / 240) * 100)))
+        # 🧮 MATHEMATICAL AGGREGATION
+        # Max Base (140) + Max Climate Bonus (15) = 155 Total Scale Limit
+        total_pts = max(0, pts + rainfall_pts)
+        score = max(0, min(100, round((total_pts / 155) * 100)))
 
         # Absolute hard safety limits
         if credit_history == 'defaulted' and score > 35:
@@ -205,10 +210,11 @@ def download_report(record_id):
     weather_info = DISTRICT_RAINFALL_LOOKUP.get(district_name, {"annual_mm": 920, "zone": "Region IIa"})
     annual_mm = weather_info['annual_mm']
     
-    if annual_mm >= 900: r_score = 100
-    elif annual_mm >= 700: r_score = 80
-    elif annual_mm >= 500: r_score = 60
-    elif annual_mm >= 300: r_score = 40
+    # Mirror score brackets for visual clarity in PDF
+    if annual_mm >= 1100: r_score = 100
+    elif annual_mm >= 800: r_score = 80
+    elif annual_mm >= 700: r_score = 60
+    elif annual_mm >= 600: r_score = 40
     else: r_score = 20
 
     buffer = io.BytesIO()
