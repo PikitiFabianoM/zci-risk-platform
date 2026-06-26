@@ -11,6 +11,22 @@ app = Flask(__name__)
 DATABASE = 'zci_registry.db'
 VALID_OFFICER_TOKEN = 'officer_alpha'
 
+# Static lookup table mapping Zambia agricultural hub districts to historical CHIRPS data baselines
+DISTRICT_RAINFALL_LOOKUP = {
+    "Kabwe": {"annual_mm": 920, "zone": "Region IIa"},
+    "Chibombo": {"annual_mm": 850, "zone": "Region IIa"},
+    "Mkushi": {"annual_mm": 950, "zone": "Region IIa"},
+    "Petauke": {"annual_mm": 820, "zone": "Region IIa"},
+    "Choma": {"annual_mm": 780, "zone": "Region IIb"},
+    "Monze": {"annual_mm": 740, "zone": "Region IIb"},
+    "Mazabuka": {"annual_mm": 760, "zone": "Region IIb"},
+    "Mpika": {"annual_mm": 1050, "zone": "Region III"},
+    "Kasama": {"annual_mm": 1200, "zone": "Region III"},
+    "Solwezi": {"annual_mm": 1300, "zone": "Region III"},
+    "Siavonga": {"annual_mm": 650, "zone": "Region I"},
+    "Shang'ombo": {"annual_mm": 600, "zone": "Region I"}
+}
+
 def get_db():
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
@@ -18,7 +34,6 @@ def get_db():
 
 def init_db():
     conn = get_db()
-    # FIX: Corrected syntax typo from AUTORED_INCREMENT to AUTOINCREMENT
     conn.execute('''CREATE TABLE IF NOT EXISTS assessments (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         borrower_name TEXT,
@@ -30,6 +45,7 @@ def init_db():
         has_collateral TEXT,
         momo_proxy TEXT,
         credit_history TEXT,
+        district TEXT,
         dti REAL,
         score INTEGER,
         decision TEXT,
@@ -44,7 +60,6 @@ def init_db():
 def index():
     return render_template('index.html')
 
-# FIX: Secured the debug endpoint with basic query parameter authentication
 @app.route('/api/debug-db')
 def debug_db():
     token = request.args.get('token')
@@ -84,10 +99,12 @@ def api_assessments():
         has_collateral = data.get('has_collateral', 'no')
         momo_proxy = data.get('momo_proxy', 'no')
         credit_history = data.get('credit_history', 'none')
+        district = data.get('district', 'Kabwe')
         officer = data.get('officer', VALID_OFFICER_TOKEN)
 
         dti = round((monthly_installment / monthly_income) * 100, 1)
 
+        # Baseline Scoring Accumulation Blocks (Max possible points tracked = 140)
         pts = 0
         if dti <= 15: pts += 30
         elif dti <= 30: pts += 20
@@ -120,6 +137,7 @@ def api_assessments():
 
         score = max(0, min(100, round((pts / 140) * 100)))
 
+        # Fallback security limits
         if credit_history == 'defaulted' and score > 35:
             score = 35
 
@@ -139,11 +157,11 @@ def api_assessments():
         conn = get_db()
         cur = conn.execute('''INSERT INTO assessments
             (borrower_name, loan_amount, monthly_income, monthly_installment,
-             employment, sector, has_collateral, momo_proxy, credit_history,
+             employment, sector, has_collateral, momo_proxy, credit_history, district,
              dti, score, decision, rec, officer)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
             (borrower_name, loan_amount, monthly_income, monthly_installment,
-             employment, sector, has_collateral, momo_proxy, credit_history,
+             employment, sector, has_collateral, momo_proxy, credit_history, district,
              dti, score, decision, rec, officer))
         record_id = cur.lastrowid
         conn.commit()
@@ -170,18 +188,25 @@ def download_report(record_id):
         return "Record not found", 404
     row = dict(row)
 
+    # Dynamic lookup calculation for the PDF rendering pass
+    district_name = row.get('district', 'Kabwe')
+    weather_info = DISTRICT_RAINFALL_LOOKUP.get(district_name, {"annual_mm": 920, "zone": "Region IIa"})
+    annual_mm = weather_info['annual_mm']
+    
+    if annual_mm >= 900: r_score = 100
+    elif annual_mm >= 700: r_score = 80
+    elif annual_mm >= 500: r_score = 60
+    elif annual_mm >= 300: r_score = 40
+    else: r_score = 20
+
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=40, leftMargin=40, topMargin=40, bottomMargin=40)
     styles = getSampleStyleSheet()
 
-    if row['decision'] == 'APPROVE':
-        dec_color = '#10B981'
-    elif row['decision'] == 'CONDITIONAL':
-        dec_color = '#F59E0B'
-    elif row['decision'] == 'REFER':
-        dec_color = '#3B82F6'
-    else:
-        dec_color = '#EF4444'
+    if row['decision'] == 'APPROVE': dec_color = '#10B981'
+    elif row['decision'] == 'CONDITIONAL': dec_color = '#F59E0B'
+    elif row['decision'] == 'REFER': dec_color = '#3B82F6'
+    else: dec_color = '#EF4444'
 
     title_s = ParagraphStyle('T', parent=styles['Heading1'], fontSize=20, textColor=colors.HexColor('#0F172A'), alignment=1)
     sub_s = ParagraphStyle('S', parent=styles['Normal'], fontSize=9, textColor=colors.HexColor('#64748B'), alignment=1)
@@ -210,6 +235,8 @@ def download_report(record_id):
         ["DEBT-TO-INCOME RATIO", f"{row['dti']}%"],
         ["EMPLOYMENT MATRIX", str(row['employment']).replace('_', ' ').title()],
         ["MARKET SECTOR", str(row['sector']).upper()],
+        ["RISK PROVINCE / DISTRICT", f"{district_name} ({weather_info['zone']})"],
+        ["CHIRPS ANNUAL RAINFALL", f"{annual_mm} mm (Index: {r_score}/100)"],
         ["COLLATERAL PROFILE", str(row['has_collateral']).upper()],
         ["MOMO VELOCITY PROXY", "YES / STRONG VELOCITY" if row['momo_proxy'] == 'yes' else "STANDARD ACTIVITY"],
         ["CREDIT BUREAU RECORD", str(row['credit_history']).replace('_', ' ').upper()],
@@ -233,6 +260,5 @@ def download_report(record_id):
     return send_file(buffer, as_attachment=True, download_name=f"ZCI_Report_{name.replace(' ','_')}.pdf", mimetype='application/pdf')
 
 if __name__ == '__main__':
-    # REMOVED silent try/except block to allow clean database validation
     init_db()
     app.run(debug=True)
