@@ -104,7 +104,7 @@ def api_assessments():
 
         dti = round((monthly_installment / monthly_income) * 100, 1)
 
-        # 🌧️ RECALIBRATED CLIMATE RISK MATRIX (Contributes ~10% of the maximum 155 total scale points)
+        # 🌧️ CLIMATE RISK MATRIX (Unchanged - acts as a modifier up to +15 pts)
         weather_info = DISTRICT_RAINFALL_LOOKUP.get(district, {"annual_mm": 920, "zone": "Region IIa"})
         annual_mm = weather_info['annual_mm']
         
@@ -119,13 +119,16 @@ def api_assessments():
         else:
             rainfall_pts = -15     # Extreme Climate Stress (Region I)
 
-        # Core Credit Point Allocations (Base Sub-total max points = 140)
+        # 📊 RECALIBRATED CORE CREDIT POINT ALLOCATIONS
         pts = 0
-        if dti <= 15: pts += 30
-        elif dti <= 30: pts += 20
-        elif dti <= 45: pts += 10
-        elif dti <= 60: pts += 5
+        
+        # DTI brackets
+        if dti <= 20: pts += 30
+        elif dti <= 35: pts += 20
+        elif dti <= 50: pts += 10
+        elif dti <= 65: pts += 5
 
+        # Loan-to-income ratio (unchanged)
         annual_income = monthly_income * 12
         loan_to_income_ratio = (loan_amount / annual_income) if annual_income > 0 else 0
         if loan_to_income_ratio <= 0.5: pts += 15
@@ -133,27 +136,33 @@ def api_assessments():
         elif loan_to_income_ratio <= 2.0: pts += 5
         else: pts -= 15
 
-        if employment == 'formal_employed': pts += 25
-        elif employment == 'self_employed': pts += 18
+        # Employment matrix
+        if employment == 'formal_employed': pts += 15
+        elif employment == 'self_employed': pts += 9
+        else: pts += 3
+
+        # Market sector
+        if sector == 'trade': pts += 15
+        elif sector == 'agriculture': pts += 12  
+        elif sector == 'services': pts += 10
         else: pts += 8
 
-        if sector == 'trade': pts += 25
-        elif sector == 'agriculture': pts += 22  
-        elif sector == 'services': pts += 15
-        else: pts += 10
+        # Collateral profile
+        if has_collateral == 'yes': pts += 12
 
-        if has_collateral == 'yes': pts += 20
-        if momo_proxy == 'yes': pts += 10
+        # MoMo velocity proxy
+        if momo_proxy == 'yes': pts += 8
 
-        if credit_history == '3_paid': pts += 15
-        elif credit_history == '1-2_paid': pts += 10
-        elif credit_history == 'none': pts += 5
-        elif credit_history == 'defaulted': pts -= 10
+        # Credit bureau record
+        if credit_history == '3_paid': pts += 25
+        elif credit_history == '1-2_paid': pts += 15
+        elif credit_history == 'none': pts += 8
+        elif credit_history == 'defaulted': pts -= 15
 
-        # 🧮 MATHEMATICAL AGGREGATION
-        # Max Base (140) + Max Climate Bonus (15) = 155 Total Scale Limit
+        # 🧮 RECALIBRATED MATHEMATICAL AGGREGATION
+        # Max Base (120) + Max Climate Bonus (15) = 135 Total Scale Limit
         total_pts = max(0, pts + rainfall_pts)
-        score = max(0, min(100, round((total_pts / 155) * 100)))
+        score = max(0, min(100, round((total_pts / 135) * 100)))
 
         # Absolute hard safety limits
         if credit_history == 'defaulted' and score > 35:
@@ -210,7 +219,6 @@ def download_report(record_id):
     weather_info = DISTRICT_RAINFALL_LOOKUP.get(district_name, {"annual_mm": 920, "zone": "Region IIa"})
     annual_mm = weather_info['annual_mm']
     
-    # Mirror score brackets for visual clarity in PDF
     if annual_mm >= 1100: r_score = 100
     elif annual_mm >= 800: r_score = 80
     elif annual_mm >= 700: r_score = 60
