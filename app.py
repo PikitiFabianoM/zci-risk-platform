@@ -34,6 +34,7 @@ def get_db():
 
 def init_db():
     conn = get_db()
+    # 1. Ensure the baseline table structure exists
     conn.execute('''CREATE TABLE IF NOT EXISTS assessments (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         borrower_name TEXT,
@@ -45,7 +46,6 @@ def init_db():
         has_collateral TEXT,
         momo_proxy TEXT,
         credit_history TEXT,
-        district TEXT,
         dti REAL,
         score INTEGER,
         decision TEXT,
@@ -54,6 +54,19 @@ def init_db():
         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
     )''')
     conn.commit()
+
+    # 2. Programmatic Migration: Check for the missing 'district' column and inject it safely
+    cursor = conn.execute("PRAGMA table_info(assessments)")
+    columns = [row['name'] for row in cursor.fetchall()]
+    
+    if 'district' not in columns:
+        try:
+            conn.execute("ALTER TABLE assessments ADD COLUMN district TEXT DEFAULT 'Kabwe'")
+            conn.commit()
+            print("Migration: Successfully injected missing 'district' column into live production schema.")
+        except Exception as e:
+            print(f"Migration Warning: Failed to alter table: {e}")
+            
     conn.close()
 
 @app.route('/')
@@ -128,7 +141,7 @@ def api_assessments():
         elif dti <= 50: pts += 10
         elif dti <= 65: pts += 5
 
-        # Loan-to-income ratio (unchanged)
+        # Loan-to-income ratio
         annual_income = monthly_income * 12
         loan_to_income_ratio = (loan_amount / annual_income) if annual_income > 0 else 0
         if loan_to_income_ratio <= 0.5: pts += 15
@@ -159,8 +172,7 @@ def api_assessments():
         elif credit_history == 'none': pts += 8
         elif credit_history == 'defaulted': pts -= 15
 
-        # 🧮 RECALIBRATED MATHEMATICAL AGGREGATION
-        # Max Base (120) + Max Climate Bonus (15) = 135 Total Scale Limit
+        # 🧮 MATHEMATICAL AGGREGATION
         total_pts = max(0, pts + rainfall_pts)
         score = max(0, min(100, round((total_pts / 135) * 100)))
 
