@@ -193,6 +193,13 @@ def api_assessments():
             decision = "DECLINE"
             rec = "Risk thresholds breached. Application does not meet lending criteria."
 
+        # Absolute hard safety override: DTI >= 80% forces decline regardless of score.
+        # Placed after the score-based decision block (not before, like the defaulted-credit
+        # cap) because this overrides the decision itself, not the score that feeds into it.
+        if dti >= 80:
+            decision = "DECLINE"
+            rec = "Debt-to-income ratio of {}% exceeds the 80% hard limit; installment is not serviceable. Application does not meet lending criteria.".format(dti)
+
         conn = get_db()
         cur = conn.execute('''INSERT INTO assessments
             (borrower_name, loan_amount, monthly_income, monthly_installment,
