@@ -1,190 +1,639 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZCI Enterprise Risk Platform</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZCI Risk Desk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+
+  :root{
+    --ink:#0E1024;
+    --ink-soft:#4A4D63;
+    --paper:#F4F5FA;
+    --paper-raised:#FFFFFF;
+    --line:#E1E4F0;
+    --line-strong:#CBD0E6;
+
+    --signal:#3548E0;
+    --signal-dim:#E9ECFB;
+    --harvest:#D98C2B;
+    --harvest-dim:#F8ECD8;
+    --ledger:#146B5C;
+    --ledger-dim:#DCEFE9;
+    --brick:#A8331F;
+    --brick-dim:#F3E1DD;
+    --muted:#7479904a;
+
+    --font-display:'Sora', sans-serif;
+    --font-body:'Inter', sans-serif;
+    --font-mono:'JetBrains Mono', monospace;
+
+    --radius:12px;
+    --shadow: 0 1px 2px rgba(14,16,36,0.04), 0 12px 28px rgba(14,16,36,0.06);
+  }
+
+  *{ box-sizing:border-box; }
+
+  html,body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--font-body);
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .topbar{
+    border-bottom:1px solid var(--line);
+    background:var(--paper-raised);
+  }
+  .topbar-inner{
+    max-width:1180px;
+    margin:0 auto;
+    padding:18px 28px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .brand{
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+  }
+  .brand-mark{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:20px;
+    letter-spacing:0.02em;
+    color:var(--ink);
+  }
+  .brand-sub{
+    font-family:var(--font-mono);
+    font-size:11px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+  }
+  .officer-pill{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-family:var(--font-mono);
+    font-size:12px;
+    color:var(--ink-soft);
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:999px;
+    padding:6px 14px;
+  }
+  .officer-dot{
+    width:7px; height:7px; border-radius:50%;
+    background:var(--ledger);
+    flex-shrink:0;
+  }
+
+  .thesis-row{
+    max-width:1180px;
+    margin:0 auto;
+    padding:22px 28px 4px;
+  }
+  .thesis-row p{
+    margin:0;
+    max-width:640px;
+    font-size:14.5px;
+    line-height:1.55;
+    color:var(--ink-soft);
+  }
+  .thesis-row strong{ color:var(--ink); font-weight:600; }
+
+  main.workspace{
+    max-width:1180px;
+    margin:0 auto;
+    padding:22px 28px 60px;
+    display:grid;
+    grid-template-columns:1.05fr 0.95fr;
+    gap:28px;
+    align-items:start;
+  }
+
+  .panel{
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+  }
+
+  .panel-head{
+    padding:20px 24px 16px;
+    border-bottom:1px solid var(--line);
+  }
+  .panel-head h2{
+    margin:0;
+    font-family:var(--font-display);
+    font-size:16px;
+    font-weight:600;
+  }
+  .panel-head span{
+    display:block;
+    margin-top:4px;
+    font-size:12.5px;
+    color:var(--ink-soft);
+  }
+
+  .panel-body{ padding:22px 24px 26px; }
+
+  .field{ margin-bottom:16px; }
+  .field-row{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+  }
+  label{
+    display:block;
+    font-family:var(--font-mono);
+    font-size:10.5px;
+    letter-spacing:0.07em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    margin-bottom:6px;
+  }
+  input, select{
+    width:100%;
+    background:var(--paper);
+    border:1px solid var(--line-strong);
+    border-radius:9px;
+    padding:10px 12px;
+    font-family:var(--font-body);
+    font-size:14px;
+    color:var(--ink);
+    transition:border-color .15s, box-shadow .15s;
+  }
+  input:focus-visible, select:focus-visible{
+    outline:none;
+    border-color:var(--signal);
+    box-shadow:0 0 0 3px var(--signal-dim);
+  }
+  select{ appearance:none; cursor:pointer; }
+
+  .run-btn{
+    width:100%;
+    margin-top:6px;
+    background:var(--ink);
+    color:#fff;
+    border:none;
+    border-radius:9px;
+    padding:13px 16px;
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:14px;
+    letter-spacing:0.01em;
+    cursor:pointer;
+    transition:background .15s, transform .1s;
+  }
+  .run-btn:hover{ background:#1A1D3D; }
+  .run-btn:active{ transform:translateY(1px); }
+  .run-btn:focus-visible{ outline:3px solid var(--signal-dim); outline-offset:2px; }
+
+  /* ---- Result panel ---- */
+  .empty-state{
+    padding:60px 28px;
+    text-align:center;
+  }
+  .empty-state .glyph{
+    width:46px; height:46px;
+    margin:0 auto 16px;
+    border-radius:50%;
+    border:1.5px dashed var(--line-strong);
+  }
+  .empty-state p{
+    margin:0 auto;
+    max-width:280px;
+    font-size:13.5px;
+    line-height:1.6;
+    color:var(--ink-soft);
+  }
+
+  .error-banner{
+    margin:0 24px 18px;
+    padding:12px 14px;
+    border-radius:8px;
+    background:var(--brick-dim);
+    border:1px solid var(--brick);
+    color:var(--brick);
+    font-size:13px;
+  }
+
+  .result-card{ padding:8px 24px 26px; }
+
+  .gauge-wrap{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:18px 0 4px;
+  }
+  .gauge-wrap svg{ width:240px; height:152px; display:block; }
+  .gauge-readout{
+    margin-top:-46px;
+    text-align:center;
+  }
+  .gauge-readout .score{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:42px;
+    line-height:1;
+  }
+  .gauge-readout .of100{
+    font-family:var(--font-mono);
+    font-size:11px;
+    letter-spacing:0.08em;
+    color:var(--ink-soft);
+    text-transform:uppercase;
+  }
+
+  .decision-badge{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    margin:14px auto 0;
+    padding:7px 16px;
+    border-radius:999px;
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:14px;
+    letter-spacing:0.02em;
+  }
+  .decision-badge .dot{ width:7px; height:7px; border-radius:50%; }
+
+  .badge-row{ display:flex; justify-content:center; }
+
+  .rec-text{
+    margin:16px 24px 0;
+    padding:14px 16px;
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:9px;
+    font-size:13px;
+    line-height:1.55;
+    color:var(--ink-soft);
+  }
+
+  .metric-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin:18px 24px 0;
+    font-size:12.5px;
+    color:var(--ink-soft);
+  }
+  .metric-row strong{
+    font-family:var(--font-mono);
+    color:var(--ink);
+    font-weight:600;
+  }
+  .dti-track{
+    height:6px;
+    border-radius:4px;
+    background:var(--line);
+    margin:8px 24px 0;
+    overflow:hidden;
+  }
+  .dti-fill{
+    height:100%;
+    background:var(--signal);
+    border-radius:4px;
+    width:0%;
+    transition:width .5s ease;
+  }
+
+  .download-btn{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    margin:22px 24px 0;
+    padding:12px 16px;
+    background:var(--paper);
+    border:1px solid var(--line-strong);
+    border-radius:9px;
+    color:var(--ink);
+    font-family:var(--font-body);
+    font-weight:600;
+    font-size:13.5px;
+    text-decoration:none;
+    transition:border-color .15s, background .15s;
+  }
+  .download-btn:hover{ border-color:var(--ink); background:var(--paper-raised); }
+
+  /* decision color states applied via class on result-card */
+  .state-approve .decision-badge{ background:var(--ledger-dim); color:var(--ledger); }
+  .state-approve .decision-badge .dot{ background:var(--ledger); }
+  .state-conditional .decision-badge{ background:var(--harvest-dim); color:var(--harvest); }
+  .state-conditional .decision-badge .dot{ background:var(--harvest); }
+  .state-refer .decision-badge{ background:var(--signal-dim); color:var(--signal); }
+  .state-refer .decision-badge .dot{ background:var(--signal); }
+  .state-decline .decision-badge{ background:var(--brick-dim); color:var(--brick); }
+  .state-decline .decision-badge .dot{ background:var(--brick); }
+
+  #gaugeNeedle{
+    transition:transform .7s cubic-bezier(.2,.8,.2,1);
+  }
+  @media (prefers-reduced-motion: reduce){
+    #gaugeNeedle{ transition:none; }
+    .dti-fill{ transition:none; }
+  }
+
+  @media (max-width:900px){
+    main.workspace{ grid-template-columns:1fr; }
+    .field-row{ grid-template-columns:1fr; }
+  }
+</style>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen font-sans">
+<body>
 
-    <header class="border-b border-slate-800 bg-slate-950 p-4 shadow-md">
-        <div class="max-w-6xl mx-auto flex justify-between items-center">
-            <h1 class="text-xl font-bold tracking-wider text-emerald-400">ZCI ENTERPRISE RISK PLATFORM</h1>
-            <span class="text-xs bg-slate-800 px-3 py-1 rounded text-slate-400 border border-slate-700">Officer Terminal v1.2</span>
-        </div>
-    </header>
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <span class="brand-mark">ZCI</span>
+        <span class="brand-sub">Risk&nbsp;Desk</span>
+      </div>
+      <div class="officer-pill">
+        <span class="officer-dot"></span>
+        Officer Alpha
+      </div>
+    </div>
+  </div>
 
-    <main class="max-w-6xl mx-auto p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
-        
-        <section class="bg-slate-950 p-6 rounded-lg border border-slate-800 shadow-xl">
-            <h2 class="text-lg font-semibold mb-4 text-slate-300 border-b border-slate-800 pb-2">New Risk Assessment</h2>
-            <form id="riskForm" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Borrower Full Name</label>
-                    <input type="text" id="borrower_name" required class="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-slate-200 focus:outline-none focus:border-emerald-500">
-                </div>
+  <div class="thesis-row">
+    <p>Score Zambian SME and agri-sector loans against <strong>repayment capacity</strong>, <strong>sector exposure</strong>, and <strong>seasonal rainfall risk</strong> &mdash; in one read.</p>
+  </div>
 
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Loan Principal (ZMW)</label>
-                        <input type="number" id="loan_amount" required class="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-slate-200 focus:outline-none focus:border-emerald-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Monthly Net Income (ZMW)</label>
-                        <input type="number" id="monthly_income" required class="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-slate-200 focus:outline-none focus:border-emerald-500">
-                    </div>
-                </div>
+  <main class="workspace">
 
-                <div>
-                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Proposed Monthly Installment (ZMW)</label>
-                    <input type="number" id="monthly_installment" required class="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-slate-200 focus:outline-none focus:border-emerald-500">
-                </div>
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Borrower profile</h2>
+        <span>Complete every field for an accurate read.</span>
+      </div>
+      <div class="panel-body">
+        <form id="riskForm">
+          <div class="field">
+            <label for="borrower_name">Borrower full name</label>
+            <input type="text" id="borrower_name" required>
+          </div>
 
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Employment Type</label>
-                        <select id="employment" class="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-slate-200 focus:outline-none focus:border-emerald-500">
-                            <option value="formal_employed">Formal Employment</option>
-                            <option value="self_employed">Self Employed / Trader</option>
-                            <option value="unemployed">Unemployed</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Trade Sector</label>
-                        <select id="sector" class="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-slate-200 focus:outline-none focus:border-emerald-500">
-                            <option value="trade">Retail & Trade</option>
-                            <option value="agriculture">Agriculture & Farming</option>
-                            <option value="services">Services & Hospitality</option>
-                            <option value="other">Other Sectors</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Collateral Secured?</label>
-                        <select id="has_collateral" class="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-slate-200 focus:outline-none focus:border-emerald-500">
-                            <option value="no">No Collateral</option>
-                            <option value="yes">Yes, Verified Asset</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">High MoMo Velocity?</label>
-                        <select id="momo_proxy" class="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-slate-200 focus:outline-none focus:border-emerald-500">
-                            <option value="no">Standard Volume</option>
-                            <option value="yes">Yes, Strong History</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Credit History (Bureau)</label>
-                        <select id="credit_history" class="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-slate-200 focus:outline-none focus:border-emerald-500">
-                            <option value="none">No Prior Records</option>
-                            <option value="3_paid">3+ Facilities Settled</option>
-                            <option value="1-2_paid">1-2 Facilities Settled</option>
-                            <option value="defaulted">Historical Default</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Operational District</label>
-                        <select id="district" class="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-slate-200 focus:outline-none focus:border-emerald-500">
-                            <option value="Kabwe">Kabwe</option>
-                            <option value="Chibombo">Chibombo</option>
-                            <option value="Mkushi">Mkushi</option>
-                            <option value="Petauke">Petauke</option>
-                            <option value="Choma">Choma</option>
-                            <option value="Monze">Monze</option>
-                            <option value="Mazabuka">Mazabuka</option>
-                            <option value="Mpika">Mpika</option>
-                            <option value="Kasama">Kasama</option>
-                            <option value="Solwezi">Solwezi</option>
-                            <option value="Siavonga">Siavonga</option>
-                            <option value="Shang'ombo">Shang'ombo</option>
-                        </select>
-                    </div>
-                </div>
-
-                <button type="button" onclick="submitAssessment()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold py-3 px-4 rounded tracking-wide transition shadow-lg">
-                    EXECUTE RISK EVALUATION
-                </button>
-            </form>
-        </section>
-
-        <section class="space-y-6">
-            <div id="resultCard" class="hidden bg-slate-950 p-6 rounded-lg border border-emerald-800 shadow-xl transition-all">
-                <h2 class="text-lg font-semibold mb-2 text-slate-300 border-b border-slate-800 pb-2">Evaluation Metrics</h2>
-                
-                <div class="flex items-baseline justify-between mt-4">
-                    <span class="text-sm text-slate-400">Calculated Score Index</span>
-                    <span id="resScore" class="text-5xl font-black text-emerald-400">0</span>
-                </div>
-                
-                <div class="mt-4 p-4 rounded bg-slate-900 border border-slate-800">
-                    <div class="text-xs font-bold uppercase text-slate-400 tracking-wider">System Decision</div>
-                    <div id="resDecision" class="text-xl font-extrabold mt-1">---</div>
-                    <p id="resRec" class="text-sm text-slate-300 mt-2 italic"></p>
-                </div>
-
-                <div class="mt-4 text-sm text-slate-400 flex justify-between">
-                    <span>Debt-to-Income (DTI):</span>
-                    <span id="resDTI" class="font-bold text-slate-200">0%</span>
-                </div>
-
-                <a id="downloadBtn" href="#" class="block mt-6 text-center bg-slate-800 border border-slate-700 hover:border-slate-600 text-slate-200 font-semibold py-2 px-4 rounded transition">
-                    Download Official Memorandum (.PDF)
-                </a>
+          <div class="field-row">
+            <div class="field">
+              <label for="loan_amount">Loan principal (ZMW)</label>
+              <input type="number" id="loan_amount" required>
             </div>
-        </section>
-    </main>
+            <div class="field">
+              <label for="monthly_income">Monthly net income (ZMW)</label>
+              <input type="number" id="monthly_income" required>
+            </div>
+          </div>
 
-    <script>
-        async function submitAssessment() {
-            const payload = {
-                borrower_name: document.getElementById('borrower_name').value,
-                loan_amount: document.getElementById('loan_amount').value,
-                monthly_income: document.getElementById('monthly_income').value,
-                monthly_installment: document.getElementById('monthly_installment').value,
-                employment: document.getElementById('employment').value,
-                sector: document.getElementById('sector').value,
-                has_collateral: document.getElementById('has_collateral').value,
-                momo_proxy: document.getElementById('momo_proxy').value,
-                credit_history: document.getElementById('credit_history').value,
-                district: document.getElementById('district').value,
-                officer: "officer_alpha"
-            };
+          <div class="field">
+            <label for="monthly_installment">Proposed monthly installment (ZMW)</label>
+            <input type="number" id="monthly_installment" required>
+          </div>
 
-            try {
-                const response = await fetch('/api/assessments', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
+          <div class="field-row">
+            <div class="field">
+              <label for="employment">Employment type</label>
+              <select id="employment">
+                <option value="formal_employed">Formal employment</option>
+                <option value="self_employed">Self employed / trader</option>
+                <option value="unemployed">Unemployed</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="sector">Trade sector</label>
+              <select id="sector">
+                <option value="trade">Retail &amp; trade</option>
+                <option value="agriculture">Agriculture &amp; farming</option>
+                <option value="services">Services &amp; hospitality</option>
+                <option value="other">Other sectors</option>
+              </select>
+            </div>
+          </div>
 
-                if (!response.ok) throw new Error("Evaluation Engine Error");
-                const data = await response.json();
+          <div class="field-row">
+            <div class="field">
+              <label for="has_collateral">Collateral secured?</label>
+              <select id="has_collateral">
+                <option value="no">No collateral</option>
+                <option value="yes">Yes, verified asset</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="momo_proxy">High MoMo velocity?</label>
+              <select id="momo_proxy">
+                <option value="no">Standard volume</option>
+                <option value="yes">Yes, strong history</option>
+              </select>
+            </div>
+          </div>
 
-                document.getElementById('resultCard').classList.remove('hidden');
-                document.getElementById('resScore').innerText = data.score + " / 100";
-                document.getElementById('resDecision').innerText = data.decision;
-                document.getElementById('resRec').innerText = data.rec;
-                document.getElementById('resDTI').innerText = data.dti + "%";
-                
-                const downloadBtn = document.getElementById('downloadBtn');
-                downloadBtn.href = `/api/download_report/${data.id}`;
-                
-                const decEl = document.getElementById('resDecision');
-                if (data.decision === 'APPROVE') decEl.className = "text-xl font-extrabold mt-1 text-emerald-400";
-                else if (data.decision === 'CONDITIONAL') decEl.className = "text-xl font-extrabold mt-1 text-amber-500";
-                else if (data.decision === 'REFER') decEl.className = "text-xl font-extrabold mt-1 text-blue-400";
-                else decEl.className = "text-xl font-extrabold mt-1 text-rose-500";
+          <div class="field-row">
+            <div class="field">
+              <label for="credit_history">Credit history (bureau)</label>
+              <select id="credit_history">
+                <option value="none">No prior records</option>
+                <option value="3_paid">3+ facilities settled</option>
+                <option value="1-2_paid">1&ndash;2 facilities settled</option>
+                <option value="defaulted">Historical default</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="district">Operational district</label>
+              <select id="district">
+                <option value="Kabwe">Kabwe</option>
+                <option value="Chibombo">Chibombo</option>
+                <option value="Mkushi">Mkushi</option>
+                <option value="Petauke">Petauke</option>
+                <option value="Choma">Choma</option>
+                <option value="Monze">Monze</option>
+                <option value="Mazabuka">Mazabuka</option>
+                <option value="Mpika">Mpika</option>
+                <option value="Kasama">Kasama</option>
+                <option value="Solwezi">Solwezi</option>
+                <option value="Siavonga">Siavonga</option>
+                <option value="Shang'ombo">Shang'ombo</option>
+              </select>
+            </div>
+          </div>
 
-            } catch (err) {
-                alert("Failed to execute application calculation hook: " + err.message);
-            }
-        }
-    </script>
+          <button type="button" class="run-btn" onclick="submitAssessment()">Run risk evaluation</button>
+        </form>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Risk read</h2>
+        <span>Generated instantly from the profile.</span>
+      </div>
+
+      <div id="emptyState" class="empty-state">
+        <div class="glyph"></div>
+        <p>No evaluation yet. Fill in the borrower profile and run a risk read &mdash; the score, decision, and memorandum will appear here.</p>
+      </div>
+
+      <div id="errorBanner" class="error-banner" style="display:none;"></div>
+
+      <div id="resultCard" class="result-card" style="display:none;">
+
+        <div class="gauge-wrap">
+          <svg id="gaugeSvg" viewBox="0 0 240 160"></svg>
+          <div class="gauge-readout">
+            <div id="resScore" class="score">0</div>
+            <div class="of100">out of 100</div>
+          </div>
+          <div class="badge-row">
+            <div class="decision-badge">
+              <span class="dot"></span>
+              <span id="resDecision">&mdash;</span>
+            </div>
+          </div>
+        </div>
+
+        <p id="resRec" class="rec-text"></p>
+
+        <div class="metric-row">
+          <span>Debt-to-income</span>
+          <strong id="resDTI">0%</strong>
+        </div>
+        <div class="dti-track"><div id="dtiFill" class="dti-fill"></div></div>
+
+        <a id="downloadBtn" class="download-btn" href="#">Download memorandum (PDF)</a>
+      </div>
+
+    </section>
+
+  </main>
+
+  <script>
+    // ---- Gauge geometry: 260deg sweep, gap at bottom, value 0-100 ----
+    const GAUGE = { cx: 120, cy: 130, r: 92, start: -130, end: 130 };
+    const BANDS = [
+      { from: 0,  to: 35,  color: 'var(--brick)' },
+      { from: 35, to: 50,  color: 'var(--signal)' },
+      { from: 50, to: 70,  color: 'var(--harvest)' },
+      { from: 70, to: 100, color: 'var(--ledger)' }
+    ];
+
+    function angleForValue(v){ return GAUGE.start + (v/100) * (GAUGE.end - GAUGE.start); }
+
+    function polar(cx, cy, r, angleDeg){
+      const a = (angleDeg - 90) * Math.PI / 180;
+      return { x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) };
+    }
+
+    function arcPath(cx, cy, r, a0, a1){
+      const p0 = polar(cx, cy, r, a1);
+      const p1 = polar(cx, cy, r, a0);
+      const large = (a1 - a0) > 180 ? 1 : 0;
+      return `M ${p0.x.toFixed(2)} ${p0.y.toFixed(2)} A ${r} ${r} 0 ${large} 1 ${p1.x.toFixed(2)} ${p1.y.toFixed(2)}`;
+    }
+
+    function buildGauge(){
+      const svg = document.getElementById('gaugeSvg');
+      const { cx, cy, r } = GAUGE;
+      let html = '';
+
+      // background bands
+      BANDS.forEach(b => {
+        const a0 = angleForValue(b.from), a1 = angleForValue(b.to);
+        html += `<path d="${arcPath(cx, cy, r, a0, a1)}" fill="none" stroke="${b.color}" stroke-width="14" stroke-linecap="butt" opacity="0.85"/>`;
+      });
+
+      // tick marks every 10
+      for (let v = 0; v <= 100; v += 10){
+        const a = angleForValue(v);
+        const outer = polar(cx, cy, r + 11, a);
+        const inner = polar(cx, cy, r + (v % 50 === 0 ? 1 : 4), a);
+        html += `<line x1="${inner.x.toFixed(2)}" y1="${inner.y.toFixed(2)}" x2="${outer.x.toFixed(2)}" y2="${outer.y.toFixed(2)}" stroke="var(--ink)" stroke-opacity="0.18" stroke-width="${v % 50 === 0 ? 2 : 1}"/>`;
+      }
+
+      // needle hub + needle (default pointing to angle 0 / top, rotated via transform)
+      html += `<line id="gaugeNeedle" x1="${cx}" y1="${cy}" x2="${cx}" y2="${cy - r * 0.74}" stroke="var(--ink)" stroke-width="4" stroke-linecap="round" transform="rotate(${GAUGE.start} ${cx} ${cy})"/>`;
+      html += `<circle cx="${cx}" cy="${cy}" r="6.5" fill="var(--ink)"/>`;
+
+      svg.innerHTML = html;
+    }
+
+    function setGaugeValue(score){
+      const needle = document.getElementById('gaugeNeedle');
+      const angle = angleForValue(score);
+      needle.setAttribute('transform', `rotate(${angle} ${GAUGE.cx} ${GAUGE.cy})`);
+    }
+
+    buildGauge();
+
+    const DECISION_CLASS = {
+      APPROVE: 'state-approve',
+      CONDITIONAL: 'state-conditional',
+      REFER: 'state-refer',
+      DECLINE: 'state-decline'
+    };
+
+    function showError(msg){
+      const banner = document.getElementById('errorBanner');
+      banner.textContent = msg;
+      banner.style.display = 'block';
+    }
+    function clearError(){
+      document.getElementById('errorBanner').style.display = 'none';
+    }
+
+    async function submitAssessment(){
+      clearError();
+      const payload = {
+        borrower_name: document.getElementById('borrower_name').value,
+        loan_amount: document.getElementById('loan_amount').value,
+        monthly_income: document.getElementById('monthly_income').value,
+        monthly_installment: document.getElementById('monthly_installment').value,
+        employment: document.getElementById('employment').value,
+        sector: document.getElementById('sector').value,
+        has_collateral: document.getElementById('has_collateral').value,
+        momo_proxy: document.getElementById('momo_proxy').value,
+        credit_history: document.getElementById('credit_history').value,
+        district: document.getElementById('district').value,
+        officer: "officer_alpha"
+      };
+
+      let response, data;
+      try {
+        response = await fetch('/api/assessments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (!response.ok) throw new Error('The evaluation engine returned an error.');
+        data = await response.json();
+      } catch (err) {
+        showError("Couldn't reach the evaluation engine. Check your connection and try again.");
+        return;
+      }
+
+      document.getElementById('emptyState').style.display = 'none';
+      const card = document.getElementById('resultCard');
+      card.style.display = 'block';
+
+      document.getElementById('resScore').innerText = data.score;
+      document.getElementById('resDecision').innerText = data.decision;
+      document.getElementById('resRec').innerText = data.rec;
+      document.getElementById('resDTI').innerText = data.dti + '%';
+      document.getElementById('dtiFill').style.width = Math.min(100, data.dti) + '%';
+
+      card.className = 'result-card ' + (DECISION_CLASS[data.decision] || '');
+      setGaugeValue(data.score);
+
+      document.getElementById('downloadBtn').href = `/api/download_report/${data.id}`;
+    }
+  </script>
+
 </body>
 </html>
