@@ -297,6 +297,7 @@ def download_report(record_id):
     name = "".join(c for c in row['borrower_name'] if c.isalnum() or c in " _-").strip()
     return send_file(buffer, as_attachment=True, download_name=f"ZCI_Report_{name.replace(' ','_')}.pdf", mimetype='application/pdf')
 
+init_db()
+
 if __name__ == '__main__':
-    init_db()
     app.run(debug=True)
